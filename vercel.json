@@ -1,5 +1,4 @@
 {
-  "build": {
-    "npmCommand": "npm install --legacy-peer-deps"
-  }
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": ".next"
 }
