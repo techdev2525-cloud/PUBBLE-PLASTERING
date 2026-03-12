@@ -1,0 +1,291 @@
+// Prisma schema for Pubble Plastering
+// Database: SQLite (can be changed to PostgreSQL for production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MODEL
+// ============================================
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("ADMIN")
+  avatar    String?
+  isActive  Boolean  @default(true)
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  blogPosts    BlogPost[]
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+// ============================================
+// CLIENT MODEL
+// ============================================
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  mobile    String?
+  company   String?
+  address   String?
+  city      String?
+  postcode  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects      Project[]
+  invoices      Invoice[]
+  receipts      Receipt[]
+
+  @@index([email])
+  @@map("clients")
+}
+
+// ============================================
+// PROJECT MODEL
+// ============================================
+model Project {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?
+  category     String?
+  location     String?
+  status       String    @default("QUOTE")
+  startDate    DateTime?
+  estimatedEnd DateTime?
+  completedAt  DateTime?
+  value        Float?
+  actualCost   Float?
+  notes        String?
+  featured     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  clientId String?
+  client   Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  images   ProjectImage[]
+  invoices Invoice[]
+  receipts Receipt[]
+
+  @@index([status])
+  @@index([clientId])
+  @@map("projects")
+}
+
+model ProjectImage {
+  id        String   @id @default(cuid())
+  url       String
+  caption   String?
+  isBefore  Boolean  @default(false)
+  isAfter   Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_images")
+}
+
+// ============================================
+// INVOICE MODEL
+// ============================================
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique
+  status        String   @default("DRAFT")
+  issueDate     DateTime?
+  dueDate       DateTime?
+  subtotal      Float    @default(0)
+  vatRate       Float    @default(20)
+  vatAmount     Float    @default(0)
+  total         Float    @default(0)
+  paidAt        DateTime?
+  notes         String?
+  terms         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  clientId  String
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  projectId String?
+  project   Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  items     InvoiceItem[]
+  receipts  Receipt[]
+
+  @@index([status])
+  @@index([clientId])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  description String
+  quantity    Float    @default(1)
+  unitPrice   Float
+  total       Float
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+// ============================================
+// RECEIPT MODEL
+// ============================================
+model Receipt {
+  id            String   @id @default(cuid())
+  receiptNumber String   @unique
+  amount        Float
+  paymentMethod String
+  paymentDate   DateTime @default(now())
+  reference     String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@map("receipts")
+}
+
+// ============================================
+// BLOG POST MODEL
+// ============================================
+model BlogPost {
+  id             String    @id @default(cuid())
+  title          String
+  slug           String    @unique
+  content        String
+  excerpt        String?
+  featuredImage  String?
+  category       String?
+  tags           String?
+  status         String    @default("DRAFT")
+  publishedAt    DateTime?
+  readTime       Int       @default(0)
+  views          Int       @default(0)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  authorId String
+  author   User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([status])
+  @@index([publishedAt])
+  @@map("blog_posts")
+}
+
+// ============================================
+// QUOTE REQUEST MODEL
+// ============================================
+model QuoteRequest {
+  id               String   @id @default(cuid())
+  name             String
+  email            String
+  phone            String?
+  address          String?
+  postcode         String?
+  service          String?
+  message          String
+  timeline         String?
+  budget           String?
+  preferredContact String?
+  images           String?
+  status           String   @default("NEW")
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status])
+  @@map("quote_requests")
+}
+
+// ============================================
+// MEDIA MODEL
+// ============================================
+model Media {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  altText      String?
+  folder       String?  @default("general")
+  createdAt    DateTime @default(now())
+
+  @@map("media")
+}
+
+// ============================================
+// ACTIVITY LOG MODEL
+// ============================================
+model ActivityLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String?
+  details    String?
+  createdAt  DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}
+
+// ============================================
+// SITE SETTINGS MODEL
+// ============================================
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("string")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// ============================================
+// NOTIFICATION MODEL
+// ============================================
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // QUOTE_REQUEST, INVOICE_OVERDUE, CONTACT_MESSAGE, PROJECT_UPDATE
+  title     String
+  message   String
+  link      String?  // URL to navigate to
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([read])
+  @@map("notifications")
+}
