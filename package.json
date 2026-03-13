@@ -28,7 +28,7 @@
     "jspdf": "^2.5.1",
     "next": "^14.1.0",
     "next-auth": "^4.24.5",
-    "nodemailer": "^6.9.8",
+    "nodemailer": "7.0.13",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-compare-image": "^3.4.0",
