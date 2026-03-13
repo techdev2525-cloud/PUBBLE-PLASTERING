@@ -14,7 +14,10 @@ export const config = {
   },
 };
 
-const quoteUploadDir = path.join(process.cwd(), "public", "uploads", "quotes");
+const isVercel = process.env.VERCEL === "1";
+const quoteUploadDir = isVercel
+  ? "/tmp/uploads/quotes"
+  : path.join(process.cwd(), "public", "uploads", "quotes");
 if (!fs.existsSync(quoteUploadDir)) {
   fs.mkdirSync(quoteUploadDir, { recursive: true });
 }
